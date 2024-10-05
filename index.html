@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Air Quality Dashboard</title>
+      
+      <!-- Chart.js -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+      <!-- Chart.js Annotation Plugin (use the latest version) -->
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+  
+      <!-- Moment.js for Date Handling -->
+      <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1"></script>
+  
+      <!-- Moment.js Date Adapter for Chart.js -->
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0"></script>
+  
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="styles.css">
+  </head>
+<body>
+    <div class="dashboard">
+        <h1>Air Quality Dashboard</h1>
+        <div class="upper-section">
+          <div class="left-box">
+            <!-- City Dropdown -->
+            <select id="city" class="input-select"></select>
+        
+            <!-- Health Concerns Title -->
+            <h3>Health Concerns</h3>
+        
+            <!-- Checkboxes for Health Concerns -->
+            <div class="checkbox-container">
+                <input type="checkbox" id="sleepQuality"> <label for="sleepQuality">Sleep Quality</label><br>
+                <input type="checkbox" id="respiratoryIllness"> <label for="respiratoryIllness">Respiratory Illness</label><br>
+                <input type="checkbox" id="nervousSystem"> <label for="nervousSystem">Nervous System</label>
+            </div>
+        </div>
+
+            <!-- Key Data Points Widget -->
+            <div class="right-box">
+                <h2>Key Data Points</h2>
+                <ul id="keyDataPoints">
+                    <!-- Key Data Points will be dynamically inserted here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <h3>PM 2.5 Levels by Day</h3>
+                <canvas id="pm25Chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>PM 10 Levels by Day</h3>
+                <canvas id="pm10Chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Health Impacts Section -->
+        <div id="healthImpacts"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
