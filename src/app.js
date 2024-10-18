@@ -10,6 +10,11 @@ const App = () => {
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
   const [pm25Chart, setPm25Chart] = useState(null);
   const [pm10Chart, setPm10Chart] = useState(null);
+  const [keyDataPoints, setKeyDataPoints] = useState([]);
+  const [error, setError] = useState(null);  // <-- Define error state to store errors
+
+  const cityOptions = ['Toronto', 'New York', 'San Francisco', 'Dallas', 'Boston', 'Miami', 'Houston'];  // Cities dropdown options
+
 
     // 1. Fetch the logged-in user information
     useEffect(() => {
@@ -45,17 +50,21 @@ const App = () => {
 
   // Fetch air quality data and initialize charts
   useEffect(() => {
-    async function fetchAirQualityData() {
+    const fetchAirQualityData = async () => {
       try {
         const response = await fetch('http://localhost:3000/api/airqualitydata');
+        if (!response.ok) {
+          throw new Error(`Error fetching air quality data: ${response.statusText}`);
+        }
         const data = await response.json();
+        console.log('Air Quality Data:', data); // Log the fetched data to see if it's coming through
         setAirQualityData(data);
-        if (hasCompletedQuestionnaire) initCharts(); // Initialize charts if questionnaire is completed
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching air quality data:", error);
+        setError("Error fetching air quality data");
       }
-    }
-
+    };
+  
     fetchAirQualityData();
   }, [hasCompletedQuestionnaire]);
 

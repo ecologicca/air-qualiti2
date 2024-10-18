@@ -1,42 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import Login from './Login';
-import Signup from './Signup';
-import Dashboard from './Dashboard';  // Your dashboard component
+import Login from './login';
+import Signup from './signUp';
+import Dashboard from './app';
+import ThankYou from './ThankYou';
+import WelcomePage from './WelcomePage'; // Import the WelcomePage
+import Questionnaire from './Questionnaire'; // Import Questionnaire
 
 const MainRouter = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if the user is authenticated when the app loads
+  // User session check is delayed until the user clicks login/signup
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error fetching user:", error.message);
-        setUser(null);  // No user session
+    const checkUserSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        setUser(null);  // No session found, treat as logged out
       } else {
-        setUser(user);  // Set the authenticated user
+        setUser(data.session.user);  // Set the authenticated user from the session
       }
       setLoading(false);  // Stop loading
     };
 
-    checkUser();
-
-    // Listen for changes in authentication state
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setUser(session.user);  // Set user when session is active
-      } else {
-        setUser(null);  // Reset user if session ends
-      }
-    });
-
-    // Cleanup the auth state listener when the component unmounts
-    return () => {
-      authListener.unsubscribe();
-    };
+    checkUserSession();
   }, []);
 
   if (loading) {
@@ -46,17 +34,20 @@ const MainRouter = () => {
   return (
     <Router>
       <Routes>
-        {/* Redirect to the Dashboard if the user is authenticated */}
-        <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-        
-        {/* Login route */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-        
-        {/* Signup route */}
-        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
+        {/* Welcome Page is the first route */}
+        <Route path="/" element={<WelcomePage />} />
 
-        {/* Fallback route to login if route doesn't exist */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* Redirect to Dashboard if user is authenticated */}
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+
+        {/* Routes for after authentication */}
+        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/thankyou" element={<ThankYou />} />
+        <Route path="/questionnaire" element={user ? <Questionnaire /> : <Navigate to="/login" />} />
+
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

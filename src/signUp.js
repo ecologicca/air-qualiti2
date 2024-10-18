@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
-import { supabase } from '/supabaseClient';
-import { useHistory } from 'react-router-dom';
+import { supabase } from './supabaseClient'; // Adjust path if needed
+import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setError(error.message);
-    } else {
-      alert('Check your email for a confirmation link!');
-      history.push('/thankyou'); // Redirect to thank you page after successful sign-up
+
+    try {
+      // Try to sign up the user
+      const { error } = await supabase.auth.signUp({ email, password });
+
+      // Check if an error occurred
+      if (error) {
+        // Check if the email already exists in the system
+        if (error.message === "User already registered") {
+          setError("This email is already registered. Please log in.");
+        } else {
+          setError(error.message);  // Show any other errors
+        }
+      } else {
+        // If successful, navigate to the Thank You page
+        alert('Check your email for a confirmation link!');
+        navigate('/thankyou');
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -26,15 +41,17 @@ const Signup = () => {
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        required
       />
       <input
         type="password"
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        required
       />
       <button type="submit">Sign Up</button>
-      {error && <p>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </form>
   );
 };

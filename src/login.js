@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '/supabaseClient';
-import { useHistory } from 'react-router-dom';
+import { supabase } from './supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const history = useHistory();
+  const navigate= useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,9 +22,9 @@ const Login = () => {
 
       // If no preferences found, redirect to questionnaire
       if (!data) {
-        history.push('/questionnaire');
+        history.push('/Questionnaire');
       } else {
-        history.push('/dashboard'); // If preferences found, redirect to dashboard
+        history.push('/app'); // If preferences found, redirect to dashboard
       }
     }
   };
