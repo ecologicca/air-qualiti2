@@ -34,7 +34,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchAirQualityData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/airqualitydata');
+        const response = await fetch('http://localhost:5000/api/airqualitydata');
         const data = await response.json();
         setAirQualityData(data);
       } catch (error) {

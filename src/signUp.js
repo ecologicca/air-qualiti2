@@ -13,7 +13,7 @@ const Signup = () => {
 
     try {
       // Try to sign up the user
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUpWithPassword({ email, password });
 
       // Check if an error occurred
       if (error) {
