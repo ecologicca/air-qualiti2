@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import './styles.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,48 +11,57 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    //Attempt to sign in with Supabase using email and password
-    const { data,error } = await supabase.auth.signInWithPassword({ email, password });
-    
     if (error) {
       setError(error.message);
     } else if (data && data.user) {
-      // Fetch user preferences using the user ID
-      const { data: preferences } = await supabase
+      const userId = data.user.id;
+
+      const { data: userPreferences } = await supabase
         .from('user_preferences')
         .select('*')
-        .eq('user_id', data.user.id)
+        .eq('user_id', userId)
         .single();
 
       // If no preferences found, redirect to questionnaire
-      if (!preferences) {
-        navigate('/Questionnaire');
+      if (!userPreferences) {
+        navigate('/questionnaire');
       } else {
-        navigate('/app'); // If preferences found, redirect to dashboard
+        navigate('/dashboard'); // If preferences found, redirect to dashboard
       }
     } else {
-      setError ('User data not returned')
+      setError("Unable to retrieve user information.");
     }
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button type="submit">Login</button>
-      {error && <p>{error}</p>}
-    </form>
+    <div className="login-container">
+      <div className="container form-container">
+        <h2>Login</h2>
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit">Login</button>
+          {error && <p className="error">{error}</p>}
+        </form>
+        <button className="signup-button" onClick={() => navigate('/signup')}>
+          Sign Up
+        </button>
+      </div>
+    </div>
   );
 };
 
