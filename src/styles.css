@@ -1,46 +1,71 @@
-/* General body styling */
+/* General styling */
 body {
   font-family: 'Montserrat', sans-serif;
-  padding: 20px;
   background-color: #f5f5f5;
+  padding: 20px;
 }
 
-/* Dashboard container */
-.dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
+/* Container styling */
+.dashboard, .form-container {
   background-color: white;
   padding: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Centered headings for the dashboard */
-h1, h2 {
-  text-align: center;
-}
-
-/* Upper section for dropdown, health concerns, and data points */
-.upper-section {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-/* City dropdown and health concerns box */
-.left-box, .right-box {
-  flex: 1;
-  padding: 20px;
-  background-color: #e6f4ea;
-  border-radius: 15px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  margin-right: 20px;
+.dashboard-content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
 }
 
-/* Navbar styling */
+.charts-container, .chart-section {
+  display: flex;
+  gap: 20px;
+  justify-content: space-around;
+  width: 100%;
+}
+
+/* Header styling */
+h1, h2 {
+  text-align: center;
+  color: #333;
+}
+
+h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Key Data Points */
+.key-data-points, .left-box, .right-box {
+  background-color: #e6f4ea;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  width: 100%;
+}
+
+/* Chart styling */
+canvas {
+  width: 100% !important;
+  max-width: 500px;
+  height: 300px !important;
+  border-radius: 15px;
+}
+
+.chart-container {
+  background-color: #f0f4f8;
+  padding: 20px;
+}
+
+/* Navbar and dropdown styling */
 .navbar {
   display: flex;
   justify-content: flex-end;
@@ -48,75 +73,59 @@ h1, h2 {
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid #eaeaea;
+}
+
+.dropdown, .dropdown-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button, button {
+  background-color: #4caf50;
   color: white;
-}
-
-/* Key Data Points Styling */
-.key-data-points {
-  background-color: #d8efd0;
-  padding: 15px;
-  border-radius: 10px;
-  font-weight: bold;
-}
-
-/* Chart canvas styling */
-canvas {
-  width: 100% !important;
-  height: 300px !important;
-  border-radius: 15px;
-}
-
-/* Health Concerns Title */
-h3 {
-  margin-bottom: 15px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-}
-
-/* Checkboxes container */
-.checkbox-container {
-  margin-top: 15px;
-}
-
-/* Dropdown styling */
-select {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 16px;
+  border: none;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #ccc;
-  margin-bottom: 20px;
+  cursor: pointer;
 }
 
-/* Right box additional styling */
-.right-box {
-  font-family: 'Montserrat', sans-serif;
+button:hover, .dropdown-button:hover {
+  background-color: #45a049;
+}
+
+.dropdown-content, .dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dropdown-content button, .dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px;
   font-size: 16px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 15px;
+  background: none;
+  text-align: left;
+  color: black;
+  cursor: pointer;
+  border: none;
 }
 
-/* Chart section */
-.chart-section {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 40px;
+.dropdown-content button:hover, .dropdown-menu button:hover {
+  background-color: #f5f5f5;
 }
 
-/* Chart container styling */
-.chart-container {
-  flex: 1;
-  margin: 0 10px;
-  background-color: #f0f4f8;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.dropdown:hover .dropdown-content, .dropdown-menu:hover {
+  display: block;
 }
 
-/* Form container styling */
+/* Form container layout */
 .signup-container, .questionnaire-container, .login-container {
   display: flex;
   align-items: center;
@@ -128,124 +137,16 @@ select {
 .form-container {
   max-width: 400px;
   padding: 40px;
-  background-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
   text-align: center;
 }
 
-.form-container h2 {
-  margin-bottom: 20px;
+/* Select styling */
+select, input {
   font-family: 'Montserrat', sans-serif;
-  color: #333;
-}
-
-/* Button styling */
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-.login-button, .signup-button {
-  background-color: transparent;
-  color: #4caf50;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  margin-top: 15px;
-}
-
-.login-button:hover, .signup-button:hover {
-  color: #388e3c;
-}
-
-/* Dropdown menu */
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-button {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown-content button {
-  color: black;
-  padding: 12px 16px;
-  text-align: left;
-  border: none;
-  background: none;
-  cursor: pointer;
-  width: 100%;
-}
-
-.dropdown-content button:hover {
-  background-color: #f1f1f1;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-/* Hamburger menu styling */
-.hamburger-menu {
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.hamburger-menu:hover {
-  background-color: #f5f5f5;
-}
-
-/* Dropdown menu for navbar */
-.dropdown-menu {
-  position: absolute;
-  top: 60px;
-  right: 15px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-  z-index: 1000;
-}
-
-.dropdown-menu button {
-  display: block;
-  width: 100%;
-  padding: 10px;
   font-size: 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.dropdown-menu button:hover {
-  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  width: 100%;
 }

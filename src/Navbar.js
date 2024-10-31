@@ -34,7 +34,7 @@ const Navbar = () => {
         {dropdownOpen && (
           <div style={styles.dropdownContent}>
             <p onClick={handleLogout} style={styles.dropdownItem}>Logout</p>
-            <p onClick={() => navigate('/preferences')} style={styles.dropdownItem}>Preferences</p>
+            <p onClick={() => navigate('/UserPreferences')} style={styles.dropdownItem}>Preferences</p>
           </div>
         )}
       </div>

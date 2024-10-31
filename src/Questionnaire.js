@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './styles.css';
 
 const Questionnaire = () => {
+  const [user, setUser] = useState(null);
   const [city, setCity] = useState('');
   const [hasHVAC, setHasHVAC] = useState(false);
   const [hasEcologica, setHasEcologica] = useState(false);
@@ -11,33 +12,78 @@ const Questionnaire = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        setError("Error fetching user: " + error.message);
+    const fetchUserPreferences = async () => {
+      const { data: user, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error("Error fetching user:", userError.message);
+        setError("Error fetching user: " + userError.message);
+        return; // Exit if there's an error fetching user
+      }
+  
+      if (!user || !user.id) {
+        console.error("No user found or user ID is undefined");
+        setError("User not authenticated or user ID is missing");
+        return; // Exit if user or user.id is undefined
+      }
+  
+      console.log("Authenticated user ID:", user.id);
+  
+      const { data: preferences, error: preferencesError } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+  
+      if (preferencesError) {
+        console.error("Error fetching preferences:", preferencesError.message);
+        setError("Error fetching preferences: " + preferencesError.message);
+      } else if (preferences) {
+        setCity(preferences.city);
+        setHasHVAC(preferences.has_HVAC);
+        setHasEcologica(preferences.has_ecologgica);
       }
     };
-    fetchUser();
-  }, []);
+  
+    fetchUserPreferences();
+  }, []); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const preferences = { city, has_HVAC: hasHVAC, has_ecologgica: hasEcologica };
-
+  
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError) {
+      console.error("Error fetching user:", userError.message);
+      setError("Error fetching user: " + userError.message);
+      return;
+    }
+  
+    if (!user || !user.id) {
+      setError("User not authenticated or user ID is missing");
+      console.error("User not authenticated or user ID is missing");
+      return;
+    }
+  
+    console.log("Submitting preferences for user ID:", user.id);
+  
+    const preferences = { city, has_HVAC: hasHVAC, has_ecologgica: hasEcologica, user_id: user.id };
+  
     try {
       const { error } = await supabase
         .from('user_preferences')
-        .upsert({ ...preferences, user_id: (await supabase.auth.getUser()).data.user.id });
+        .upsert(preferences, { onConflict: ['user_id'] });
+        
       if (error) {
+        console.error("Error submitting preferences:", error.message);
         setError("Error submitting preferences: " + error.message);
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard'); // Redirect to the dashboard after successful submission
       }
     } catch (err) {
+      console.error("Unexpected error submitting preferences:", err);
       setError("Unexpected error: " + err.message);
     }
-  };
-
+  };  
+   
   return (
     <div className="questionnaire-container">
       <div className="container form-container">
