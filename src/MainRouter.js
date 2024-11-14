@@ -15,6 +15,7 @@ const MainRouter = () => {
   const [user, setUser] = useState(null);
   const [hasPreferences, setHasPreferences] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const checkUserSession = async () => {
     try {
@@ -25,36 +26,42 @@ const MainRouter = () => {
         console.error("Error fetching session:", sessionError.message);
         setUser(null);
         setHasPreferences(false);
+        setLoading(false); // Ensure loading is set to false on error
+        setError("User not authenticated or user ID is missing.");
         return;
       }
-
-      if (sessionData?.session) {
+  
+      if (sessionData && sessionData.session) {
+        // If a session exists, set the user and check preferences
         const currentUser = sessionData.session.user;
-        console.log("Session found for user ID:", currentUser.id);  // Debugging log
+        console.log("Session found for user ID:", currentUser.id);
         setUser(currentUser);
-
-        // Check if user has preferences
+  
+        // Check if the user has preferences
         const { data: preferences, error: preferencesError } = await supabase
           .from('user_preferences')
-          .select('hasPreferences')
+          .select('*')
           .eq('user_id', currentUser.id)
           .single();
-
+  
         if (preferencesError) {
           console.error("Error fetching user preferences:", preferencesError.message);
           setHasPreferences(false);
         } else {
-          setHasPreferences(!!preferences);
+          setHasPreferences(!!preferences); // Set based on whether preferences exist
         }
       } else {
-        console.log("No active session found.");
+        // No active session found
+        console.log("No active session found or user ID is missing.");
         setUser(null);
         setHasPreferences(false);
+        setError("User not authenticated or user ID is missing.");
       }
     } catch (error) {
       console.error("Unexpected error checking session:", error);
       setUser(null);
       setHasPreferences(false);
+      setError("Unexpected error occurred while checking the session.");
     } finally {
       console.log("Setting loading to false");
       setLoading(false);  // Ensure loading is set to false no matter what
@@ -62,22 +69,19 @@ const MainRouter = () => {
   };
 
   useEffect(() => {
-    // Initial check for session when component mounts
     checkUserSession();
 
     // Listen for authentication state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state change detected");
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setLoading(true);  // Set loading to true while handling the state change
       if (session) {
-        console.log("User logged in with ID:", session.user.id);
-        setUser(session.user);
-        await checkUserSession();  // Re-check preferences on auth change
+        console.log("Auth state change detected: user logged in");
+        checkUserSession();  // Re-check preferences on auth change
       } else {
-        console.log("User logged out");
+        console.log("Auth state change detected: user logged out");
         setUser(null);
         setHasPreferences(false);
-        setLoading(false);  // Set loading to false if user is logged out
+        setLoading(false); // Stop loading if user logged out
       }
     });
 
@@ -85,10 +89,8 @@ const MainRouter = () => {
     return () => authListener?.subscription.unsubscribe();
   }, []);
 
-  if (loading) {
-    console.log("Still loading...");
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <p>{error}</p>;
 
   return (
     <Router>
@@ -99,17 +101,16 @@ const MainRouter = () => {
         <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
         
         {/* Redirect to Questionnaire if preferences not set */}
-        <Route
-          path="/dashboard"
-          element={user && hasPreferences ? <Dashboard /> : <Navigate to="/questionnaire" />}
-        />
+        <Route 
+          path="/dashboard" 
+          element={user && hasPreferences ? <Dashboard user={user} /> : <Navigate to="/questionnaire" />} />
+      
         <Route path="/thankyou" element={<ThankYou />} />
         
         {/* Questionnaire should load only if preferences aren't set */}
         <Route
-          path="/questionnaire"
-          element={user && !hasPreferences ? <Questionnaire /> : <Navigate to="/dashboard" />}
-        />
+         path="/questionnaire" 
+         element={user && !hasPreferences ? <Questionnaire user={user} /> : <Navigate to="/dashboard" />} />
 
         {/* User Preferences page accessible after setting initial preferences */}
         <Route path="/userpreferences" element={user ? <UserPreferences /> : <Navigate to="/login" />} />

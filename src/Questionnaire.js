@@ -11,27 +11,31 @@ const Questionnaire = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Fetch user and preferences once when component mounts
   useEffect(() => {
-    const fetchUserPreferences = async () => {
-      const { data: user, error: userError } = await supabase.auth.getUser();
+    const fetchUserAndPreferences = async () => {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.error("Error fetching user:", userError.message);
         setError("Error fetching user: " + userError.message);
-        return; // Exit if there's an error fetching user
+        return;
       }
   
-      if (!user || !user.id) {
+      if (!userData || !userData.user || !userData.user.id) {
         console.error("No user found or user ID is undefined");
         setError("User not authenticated or user ID is missing");
-        return; // Exit if user or user.id is undefined
+        return;
       }
+
+      setUser(userData.user);  // Set user once
+
+      console.log("Authenticated user ID:", userData.user.id);
   
-      console.log("Authenticated user ID:", user.id);
-  
+      // Fetch preferences for the authenticated user
       const { data: preferences, error: preferencesError } = await supabase
         .from('user_preferences')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userData.user.id)
         .single();
   
       if (preferencesError) {
@@ -44,29 +48,23 @@ const Questionnaire = () => {
       }
     };
   
-    fetchUserPreferences();
-  }, []); 
+    fetchUserAndPreferences();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    const { data: user, error: userError } = await supabase.auth.getUser();
-    if (userError) {
-      console.error("Error fetching user:", userError.message);
-      setError("Error fetching user: " + userError.message);
-      return;
-    }
-  
+
+    // Check if user is set in state
     if (!user || !user.id) {
       setError("User not authenticated or user ID is missing");
       console.error("User not authenticated or user ID is missing");
       return;
     }
-  
+
     console.log("Submitting preferences for user ID:", user.id);
-  
+
     const preferences = { city, has_HVAC: hasHVAC, has_ecologgica: hasEcologica, user_id: user.id };
-  
+
     try {
       const { error } = await supabase
         .from('user_preferences')
@@ -83,7 +81,7 @@ const Questionnaire = () => {
       setError("Unexpected error: " + err.message);
     }
   };  
-   
+
   return (
     <div className="questionnaire-container">
       <div className="container form-container">
