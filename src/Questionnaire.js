@@ -11,74 +11,81 @@ const Questionnaire = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch user and preferences once when component mounts
+  // Fetch user and preferences when component mounts
   useEffect(() => {
     const fetchUserAndPreferences = async () => {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error("Error fetching user:", userError.message);
-        setError("Error fetching user: " + userError.message);
-        return;
-      }
-  
-      if (!userData || !userData.user || !userData.user.id) {
-        console.error("No user found or user ID is undefined");
-        setError("User not authenticated or user ID is missing");
-        return;
-      }
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          throw new Error("Error fetching user: " + userError.message);
+        }
+        if (!userData?.user) {
+          throw new Error("User not authenticated or user ID is missing");
+        }
 
-      setUser(userData.user);  // Set user once
+        setUser(userData.user);  // Set user once
+        console.log("Authenticated user ID:", userData.user.id);
 
-      console.log("Authenticated user ID:", userData.user.id);
-  
-      // Fetch preferences for the authenticated user
-      const { data: preferences, error: preferencesError } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', userData.user.id)
-        .single();
-  
-      if (preferencesError) {
-        console.error("Error fetching preferences:", preferencesError.message);
-        setError("Error fetching preferences: " + preferencesError.message);
-      } else if (preferences) {
-        setCity(preferences.city);
-        setHasHVAC(preferences.has_HVAC);
-        setHasEcologica(preferences.has_ecologgica);
+        // Fetch preferences for the authenticated user
+        const { data: preferences, error: preferencesError } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userData.user.id)
+          .single();
+
+        if (preferencesError) {
+          throw new Error("Error fetching preferences: " + preferencesError.message);
+        }
+        
+        // If preferences are found, set the state accordingly
+        if (preferences) {
+          setCity(preferences.city);
+          setHasHVAC(preferences.has_HVAC);
+          setHasEcologica(preferences.has_ecologgica);
+        }
+      } catch (err) {
+        console.error(err.message);
+        setError(err.message);
       }
     };
-  
+
     fetchUserAndPreferences();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if user is set in state
+    // Ensure user is authenticated before submission
     if (!user || !user.id) {
-      setError("User not authenticated or user ID is missing");
-      console.error("User not authenticated or user ID is missing");
+      const errorMessage = "User not authenticated or user ID is missing";
+      console.error(errorMessage);
+      setError(errorMessage);
       return;
     }
 
     console.log("Submitting preferences for user ID:", user.id);
 
-    const preferences = { city, has_HVAC: hasHVAC, has_ecologgica: hasEcologica, user_id: user.id };
+    const preferences = { 
+      city, 
+      has_HVAC: hasHVAC, 
+      has_ecologgica: hasEcologica, 
+      user_id: user.id 
+    };
 
     try {
       const { error } = await supabase
         .from('user_preferences')
         .upsert(preferences, { onConflict: ['user_id'] });
-        
+
       if (error) {
-        console.error("Error submitting preferences:", error.message);
-        setError("Error submitting preferences: " + error.message);
-      } else {
-        navigate('/dashboard'); // Redirect to the dashboard after successful submission
+        throw new Error("Error submitting preferences: " + error.message);
       }
+
+      // Redirect to the dashboard after successful submission
+      navigate('/dashboard'); 
     } catch (err) {
-      console.error("Unexpected error submitting preferences:", err);
-      setError("Unexpected error: " + err.message);
+      console.error(err.message);
+      setError(err.message);
     }
   };  
 

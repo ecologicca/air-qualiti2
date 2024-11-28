@@ -13,17 +13,15 @@ const Dashboard = ({ user }) => {
   const [pm10ChartInstance, setPm10ChartInstance] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch preferences only when `user` is available
   useEffect(() => {
     if (user) {
       fetchPreferences();
     } else {
       console.error("User is not defined, cannot fetch preferences.");
     }
-  }, [user]); // Only re-run if `user` changes
+  }, [user]);
 
   const fetchPreferences = async () => {
-    // Check if `user` is defined
     if (!user || !user.id) {
       console.error("User ID is undefined, cannot fetch preferences.");
       setError("User not authenticated.");
@@ -46,33 +44,45 @@ const Dashboard = ({ user }) => {
 
     if (data) {
       console.log("Fetched user preferences:", data);
-      setCity(data.city);  // Set city state
-      setHasHVAC(data.has_HVAC);  // Set hasHVAC state
-      setHasEcologica(data.has_ecologgica);  // Set hasEcologica state
-      fetchAirQualityData(data.city); // Fetch data only after preferences are loaded
+      setCity(data.city);
+      setHasHVAC(data.has_HVAC);
+      setHasEcologica(data.has_ecologgica);
+      fetchAirQualityData(data.city);
     }
   };
 
   const fetchAirQualityData = async (selectedCity) => {
+    console.log("Selected City:", selectedCity);
     try {
       const response = await fetch('http://localhost:5000/api/airqualitydata');
       const data = await response.json();
+
+      // Filter for the selected city
       const cityData = data.filter(row => row.City.toLowerCase() === selectedCity.toLowerCase());
-  
-      // Get today's date and calculate the date 30 days ago
+      if (!cityData.length) {
+        console.error(`No data found for city: ${selectedCity}`);
+        setError(`No air quality data available for ${selectedCity}`);
+        return;
+      }
+
+      // Filter data for the last 30 days
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
-  
-      // Filter for data from the last 30 days
       const recentData = cityData.filter(row => new Date(row.Date) >= thirtyDaysAgo);
-  
+
+      console.log("Filtered recentData (last 30 days):", recentData.map(row => row.Date));
+
+      // Apply user preferences to adjust data
       const adjustedData = applyPreferences(recentData);
       setAirQualityData(adjustedData);
-  
-      calculateKeyDataPoints(adjustedData);
+
+      // Initialize charts with adjusted data
       initChart('pm25Chart', 'PM 2.5', adjustedData.map(row => row.adjustedPM25));
       initChart('pm10Chart', 'PM 10', adjustedData.map(row => row.adjustedPM10));
+
+      // Calculate key data points after charts are initialized
+      calculateKeyDataPoints(adjustedData);
     } catch (error) {
       console.error('Error fetching air quality data:', error);
       setError("Error fetching air quality data.");
@@ -95,16 +105,24 @@ const Dashboard = ({ user }) => {
   };
 
   const initChart = (elementId, label, data) => {
-    const ctx = document.getElementById(elementId).getContext('2d');
-  
-    // Destroy any existing instance of the chart
-    if (elementId === 'pm25Chart' && pm25ChartInstance) pm25ChartInstance.destroy();
-    if (elementId === 'pm10Chart' && pm10ChartInstance) pm10ChartInstance.destroy();
-  
+    const canvasElement = document.getElementById(elementId);
+    if (!canvasElement) {
+      console.error(`Canvas element with ID '${elementId}' not found.`);
+      return;
+    }
+
+    const ctx = canvasElement.getContext('2d');
+
+    if (elementId === 'pm25Chart' && pm25ChartInstance) {
+      pm25ChartInstance.destroy();
+    } else if (elementId === 'pm10Chart' && pm10ChartInstance) {
+      pm10ChartInstance.destroy();
+    }
+
     const newChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: airQualityData.map(row => row.Date), // Make sure this contains 30 days of dates
+        labels: airQualityData.map(row => row.Date),
         datasets: [{
           label: label,
           data: data,
@@ -112,27 +130,33 @@ const Dashboard = ({ user }) => {
           backgroundColor: 'rgba(34, 139, 34, 0.2)',
           tension: 0.1,
           fill: true,
-        }]
+        }],
       },
       options: {
         scales: {
-          x: { 
-            type: 'time', 
-            time: { unit: 'day' }, // Ensure the x-axis shows daily intervals
+          x: {
+            type: 'time',
+            time: { unit: 'day' },
+            title: { display: true, text: 'Date' },
           },
-          y: { beginAtZero: true }
-        }
-      }
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'µg/m³' },
+          },
+        },
+      },
     });
-  
-    // Set the correct chart instance
-    if (elementId === 'pm25Chart') setPm25ChartInstance(newChart);
-    if (elementId === 'pm10Chart') setPm10ChartInstance(newChart);
-  };  
+
+    if (elementId === 'pm25Chart') {
+      setPm25ChartInstance(newChart);
+    } else if (elementId === 'pm10Chart') {
+      setPm10ChartInstance(newChart);
+    }
+  };
 
   return (
     <div className="dashboard">
-      <h1>{city} Dashboard</h1> {/* Use the city state */}
+      <h1>{city} Dashboard</h1>
       <div className="dashboard-content">
         <div className="key-data-points">
           <h3>Key Data Points</h3>
