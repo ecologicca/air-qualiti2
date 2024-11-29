@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-moment';
+import dayjs from 'dayjs';
 
 const Dashboard = ({ user }) => {
   const [city, setCity] = useState('');
@@ -9,9 +10,11 @@ const Dashboard = ({ user }) => {
   const [hasEcologica, setHasEcologica] = useState(false);
   const [airQualityData, setAirQualityData] = useState([]);
   const [keyDataPoints, setKeyDataPoints] = useState({ over10: 0, over20: 0, over50: 0 });
-  const [pm25ChartInstance, setPm25ChartInstance] = useState(null);
-  const [pm10ChartInstance, setPm10ChartInstance] = useState(null);
   const [error, setError] = useState(null);
+  const pm25ChartInstance = useRef(null);
+  const pm10ChartInstance = useRef(null);
+  const pm25Ref = useRef(null);
+  const pm10Ref = useRef(null);
 
   useEffect(() => {
     if (user) {
@@ -69,7 +72,11 @@ const Dashboard = ({ user }) => {
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
-      const recentData = cityData.filter(row => new Date(row.Date) >= thirtyDaysAgo);
+
+      const recentData = cityData.filter(row => {
+        row.Date = dayjs(row.Date, 'M/D/YYYY H:mm:ss').toDate(); // Parse custom format
+        return row.Date >= thirtyDaysAgo;
+      });
 
       console.log("Filtered recentData (last 30 days):", recentData.map(row => row.Date));
 
@@ -78,8 +85,8 @@ const Dashboard = ({ user }) => {
       setAirQualityData(adjustedData);
 
       // Initialize charts with adjusted data
-      initChart('pm25Chart', 'PM 2.5', adjustedData.map(row => row.adjustedPM25));
-      initChart('pm10Chart', 'PM 10', adjustedData.map(row => row.adjustedPM10));
+      initChart(pm25Ref, pm25ChartInstance, 'PM 2.5', adjustedData.map(row => row.adjustedPM25));
+      initChart(pm10Ref, pm10ChartInstance, 'PM 10', adjustedData.map(row => row.adjustedPM10));
 
       // Calculate key data points after charts are initialized
       calculateKeyDataPoints(adjustedData);
@@ -104,21 +111,15 @@ const Dashboard = ({ user }) => {
     setKeyDataPoints({ over10, over20, over50 });
   };
 
-  const initChart = (elementId, label, data) => {
-    const canvasElement = document.getElementById(elementId);
-    if (!canvasElement) {
-      console.error(`Canvas element with ID '${elementId}' not found.`);
-      return;
+  const initChart = (ref, chartInstanceRef, label, data) => {
+    if (chartInstanceRef.current) {
+      console.log(`Destroying existing ${label} chart instance...`);
+      chartInstanceRef.current.destroy();
     }
 
-    const ctx = canvasElement.getContext('2d');
+    const ctx = ref.current.getContext('2d');
 
-    if (elementId === 'pm25Chart' && pm25ChartInstance) {
-      pm25ChartInstance.destroy();
-    } else if (elementId === 'pm10Chart' && pm10ChartInstance) {
-      pm10ChartInstance.destroy();
-    }
-
+    // Create the new chart
     const newChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -133,6 +134,8 @@ const Dashboard = ({ user }) => {
         }],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
             type: 'time',
@@ -147,11 +150,7 @@ const Dashboard = ({ user }) => {
       },
     });
 
-    if (elementId === 'pm25Chart') {
-      setPm25ChartInstance(newChart);
-    } else if (elementId === 'pm10Chart') {
-      setPm10ChartInstance(newChart);
-    }
+    chartInstanceRef.current = newChart; // Save the new chart instance
   };
 
   return (
@@ -165,8 +164,8 @@ const Dashboard = ({ user }) => {
           <p><strong>{keyDataPoints.over50}</strong> days over 50 µg/m³ in the last 30 days</p>
         </div>
         <div className="charts-container">
-          <canvas id="pm25Chart"></canvas>
-          <canvas id="pm10Chart"></canvas>
+          <canvas ref={pm25Ref}></canvas>
+          <canvas ref={pm10Ref}></canvas>
         </div>
       </div>
     </div>
