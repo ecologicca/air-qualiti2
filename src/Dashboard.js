@@ -29,7 +29,44 @@ ChartJS.register(
 ChartJS.defaults.responsive = true;
 ChartJS.defaults.maintainAspectRatio = false;
 
-const Dashboard = ({ user }) => {
+const calculateHVACReduction = (value) => {
+  return value * 0.7; // 30% reduction
+};
+
+const calculateEcologicaReduction = (value) => {
+  return value * 0.6; // 40% reduction
+};
+
+const calculateCombinedReduction = (value) => {
+  return value * 0.5; // 50% reduction
+};
+
+const calculateDeeperSleepMinutes = (data, hasHVAC, hasEcologica) => {
+  const getAdjustedValue = (value) => {
+    if (hasHVAC && hasEcologica) {
+      return calculateCombinedReduction(value);
+    } else if (hasHVAC) {
+      return calculateHVACReduction(value);
+    } else if (hasEcologica) {
+      return calculateEcologicaReduction(value);
+    }
+    return value;
+  };
+
+  // Count days where PM2.5 is 5 or under after reductions
+  const daysUnderThreshold = data.filter(day => {
+    const adjustedValue = getAdjustedValue(parseFloat(day['PM 2.5']));
+    return adjustedValue <= 5;
+  }).length;
+
+  // Calculate total minutes of deeper sleep
+  // days × 8 hours × 60 minutes
+  const deeperSleepMinutes = daysUnderThreshold * 8 * 60;
+
+  return deeperSleepMinutes;
+};
+
+const Dashboard = () => {
   const [airQualityData, setAirQualityData] = useState([]);
   const [chartData, setChartData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,25 +76,16 @@ const Dashboard = ({ user }) => {
   const [firstName, setFirstName] = useState('');
   const [activeDatasets, setActiveDatasets] = useState({
     'Original PM2.5': true,
-    'PM2.5 with HVAC (50% reduction)': true,
-    'PM2.5 with Ecologica (30% reduction)': true,
-    'PM2.5 with HVAC + Ecologica (65% total reduction)': true,
+    'PM2.5 with HVAC': false,
+    'PM2.5 with Ecologica': false,
+    'PM2.5 with Both': false,
     'Original PM10': true,
-    'PM10 with HVAC (50% reduction)': true,
-    'PM10 with Ecologica (30% reduction)': true,
-    'PM10 with HVAC + Ecologica (65% total reduction)': true
+    'PM10 with HVAC': false,
+    'PM10 with Ecologica': false,
+    'PM10 with Both': false
   });
 
   const processChartData = (data, pollutantType) => {
-    console.log(`Processing ${pollutantType} data:`, {
-      firstDataPoint: data[0],
-      pollutantType,
-      rawPM10: data[0]['PM 10'],
-      rawPM25: data[0]['PM 2.5'],
-      parsedPM10: parseFloat(data[0]['PM 10']),
-      parsedPM25: parseFloat(data[0]['PM 2.5'])
-    });
-
     const datasets = [
       {
         label: `Original ${pollutantType}`,
@@ -65,11 +93,9 @@ const Dashboard = ({ user }) => {
           x: d.date,
           y: pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5'])
         })),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.1)',
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 8,
+        borderColor: 'rgb(0, 100, 0)', // Dark green
+        backgroundColor: 'rgba(0, 100, 0, 0.1)',
+        borderWidth: 2,
         tension: 0.1,
         hidden: !activeDatasets[`Original ${pollutantType}`]
       }
@@ -77,58 +103,46 @@ const Dashboard = ({ user }) => {
 
     if (hasHVAC) {
       datasets.push({
-        label: `${pollutantType} with HVAC (50% reduction)`,
+        label: `${pollutantType} with HVAC`,
         data: data.map(d => ({
           x: d.date,
-          y: pollutantType === 'PM10' ? 
-            parseFloat(d['PM 10']) * 0.5 : 
-            parseFloat(d['PM 2.5']) * 0.5
+          y: calculateHVACReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
         })),
-        borderColor: 'rgb(255, 159, 64)',
-        backgroundColor: 'rgba(255, 159, 64, 0.1)',
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 8,
+        borderColor: 'rgb(34, 139, 34)', // Forest green
+        backgroundColor: 'rgba(34, 139, 34, 0.1)',
+        borderWidth: 2,
         tension: 0.1,
-        hidden: !activeDatasets[`${pollutantType} with HVAC (50% reduction)`]
+        hidden: !activeDatasets[`${pollutantType} with HVAC`]
       });
     }
 
     if (hasEcologica) {
       datasets.push({
-        label: `${pollutantType} with Ecologica (30% reduction)`,
+        label: `${pollutantType} with Ecologica`,
         data: data.map(d => ({
           x: d.date,
-          y: pollutantType === 'PM10' ? 
-            parseFloat(d['PM 10']) * 0.7 : 
-            parseFloat(d['PM 2.5']) * 0.7
+          y: calculateEcologicaReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
         })),
-        borderColor: 'rgb(54, 162, 235)',
-        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 8,
+        borderColor: 'rgb(60, 179, 113)', // Medium sea green
+        backgroundColor: 'rgba(60, 179, 113, 0.1)',
+        borderWidth: 2,
         tension: 0.1,
-        hidden: !activeDatasets[`${pollutantType} with Ecologica (30% reduction)`]
+        hidden: !activeDatasets[`${pollutantType} with Ecologica`]
       });
     }
 
     if (hasHVAC && hasEcologica) {
       datasets.push({
-        label: `${pollutantType} with HVAC + Ecologica (65% total reduction)`,
+        label: `${pollutantType} with Both`,
         data: data.map(d => ({
           x: d.date,
-          y: pollutantType === 'PM10' ? 
-            parseFloat(d['PM 10']) * 0.5 * 0.7 : 
-            parseFloat(d['PM 2.5']) * 0.5 * 0.7
+          y: calculateCombinedReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
         })),
-        borderColor: 'rgb(153, 102, 255)',
-        backgroundColor: 'rgba(153, 102, 255, 0.1)',
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 8,
+        borderColor: 'rgb(144, 238, 144)', // Light green
+        backgroundColor: 'rgba(144, 238, 144, 0.1)',
+        borderWidth: 2,
         tension: 0.1,
-        hidden: !activeDatasets[`${pollutantType} with HVAC + Ecologica (65% total reduction)`]
+        hidden: !activeDatasets[`${pollutantType} with Both`]
       });
     }
 
@@ -164,11 +178,12 @@ const Dashboard = ({ user }) => {
       .filter(item => 
         !isNaN(item.date.getTime()) && 
         !isNaN(item['PM 10']) && 
-        !isNaN(item['PM 2.5'])
+        !isNaN(item['PM 2.5']) &&
+        item.city === city
       )
       .sort((a, b) => b.date - a.date);
 
-    console.log('Processed valid data first item:', validData[0]);
+    console.log('Processed valid data for city:', city, validData[0]);
 
     if (validData.length === 0) return [];
 
@@ -182,167 +197,131 @@ const Dashboard = ({ user }) => {
   };
 
   useEffect(() => {
-    const fetchPreferences = async () => {
+    async function fetchPreferences() {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const { data, error } = await supabase
           .from('user_preferences')
-          .select('*')
+          .select('has_HVAC, has_ecologgica, city')
           .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
+        console.log('Fetched preferences:', data);
+
+        if (error) {
+          console.error('Error fetching preferences:', error);
+          return;
+        }
 
         if (data) {
+          console.log('Setting city to:', data.city);
+          setCity(data.city);
           setHasHVAC(data.has_HVAC);
           setHasEcologica(data.has_ecologgica);
-          setFirstName(data.first_name || '');
-          setCity(data.city || 'Toronto');
+          
+          setActiveDatasets(prev => ({
+            ...prev,
+            'PM2.5 with HVAC': data.has_HVAC,
+            'PM2.5 with Ecologica': data.has_ecologgica,
+            'PM2.5 with Both': (data.has_HVAC && data.has_ecologgica),
+            'PM10 with HVAC': data.has_HVAC,
+            'PM10 with Ecologica': data.has_ecologgica,
+            'PM10 with Both': (data.has_HVAC && data.has_ecologgica)
+          }));
         }
       } catch (error) {
-        console.error('Error fetching preferences:', error);
+        console.error('Error:', error);
       }
-    };
-
-    const fetchAirQualityData = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/airqualitydata');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Raw data from API:', {
-          firstRow: data[0],
-          pm25Example: data[0]['PM 2.5'],
-          pm10Example: data[0]['PM 10']
-        });
-        const last30DaysData = getLast30Days(data);
-        setAirQualityData(last30DaysData);
-      } catch (error) {
-        console.error('Error fetching air quality:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchPreferences();
     }
+
+    fetchPreferences();
+  }, []);
+
+  const fetchAirQualityData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/airqualitydata?city=${city}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Raw data from API:', {
+        city: city,
+        firstRow: data[0],
+        pm25Example: data[0]?.['PM 2.5'],
+        pm10Example: data[0]?.['PM 10']
+      });
+      const last30DaysData = getLast30Days(data.filter(item => item.City === city));
+      setAirQualityData(last30DaysData);
+    } catch (error) {
+      console.error('Error fetching air quality:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAirQualityData();
-  }, [user]);
+  }, [city]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
-    aspectRatio: window.innerWidth < 768 ? 1 : 2,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    layout: {
-      padding: {
-        left: 10,
-        right: 10,
-        top: 10,
-        bottom: window.innerWidth < 768 ? 30 : 20
-      }
-    },
     scales: {
       x: {
         type: 'time',
         time: {
-          unit: 'day',
-          displayFormats: {
-            day: window.innerWidth < 768 ? 'MMM d' : 'MMM d, yyyy'
-          }
+          unit: 'day'
         },
-        title: {
-          display: window.innerWidth > 768,
-          text: 'Date',
-          font: {
-            size: 14,
-            weight: 'bold'
-          }
-        },
-        ticks: {
-          maxRotation: 45,
-          minRotation: 45,
-          autoSkip: true,
-          maxTicksLimit: window.innerWidth < 768 ? 8 : 15,
-          font: {
-            size: window.innerWidth < 768 ? 10 : 12
-          }
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.1)',
         }
       },
       y: {
         beginAtZero: true,
-        title: {
+        grid: {
           display: true,
-          text: 'µg/m³',
-          font: {
-            size: window.innerWidth < 768 ? 12 : 14,
-            weight: 'bold'
-          }
+          color: 'rgba(0, 0, 0, 0.1)',
         },
         ticks: {
-          font: {
-            size: window.innerWidth < 768 ? 10 : 12
+          callback: function(value) {
+            return value + ' ug/m³';
           }
-        },
-        grid: {
-          drawBorder: false
         }
       }
     },
     plugins: {
-      legend: {
-        position: 'top',
-        align: window.innerWidth < 768 ? 'start' : 'center',
-        labels: {
-          padding: window.innerWidth < 768 ? 10 : 20,
-          boxWidth: window.innerWidth < 768 ? 10 : 15,
-          font: {
-            size: window.innerWidth < 768 ? 10 : 12
-          },
-          usePointStyle: true,
-          pointStyle: 'circle',
-        },
-        onClick: (event, legendItem, legend) => {
-          const index = legendItem.datasetIndex;
-          const ci = legend.chart;
-          const meta = ci.getDatasetMeta(index);
-
-          meta.hidden = !meta.hidden;
-
-          setActiveDatasets(prev => ({
-            ...prev,
-            [legendItem.text]: !meta.hidden
-          }));
-
-          const activeCount = Object.values(activeDatasets).filter(Boolean).length;
-          
-          ci.data.datasets[index].borderWidth = !meta.hidden && activeCount === 1 ? 5 : 3;
-          ci.data.datasets[index].pointRadius = !meta.hidden && activeCount === 1 ? 6 : 4;
-          
-          ci.update();
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} ug/m³`;
+          }
         }
       },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#000',
-        titleFont: {
-          size: window.innerWidth < 768 ? 12 : 14,
-          weight: 'bold'
-        },
-        bodyColor: '#000',
-        bodyFont: {
-          size: window.innerWidth < 768 ? 11 : 13
-        },
-        borderColor: '#ddd',
-        borderWidth: 1,
-        padding: window.innerWidth < 768 ? 8 : 12,
-        displayColors: true,
-        mode: 'index',
-        intersect: false
+      legend: {
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          onClick: (event, legendItem, legend) => {
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+            const meta = ci.getDatasetMeta(index);
+
+            meta.hidden = !meta.hidden;
+
+            setActiveDatasets(prev => ({
+              ...prev,
+              [legendItem.text]: !meta.hidden
+            }));
+
+            ci.update();
+          }
+        }
       }
     }
   };
@@ -358,30 +337,49 @@ const Dashboard = ({ user }) => {
   };
 
   return (
-    <div className="dashboard" style={{ width: '100%', padding: '20px' }}>
+    <div className="dashboard">
+      {airQualityData.length > 0 && (
+        <div className="deeper-sleep-banner" style={{
+          backgroundColor: '#90c789',
+          color: '#1a472a',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          textAlign: 'center',
+          fontSize: '1.5rem',
+          fontWeight: 'bold'
+        }}>
+          {calculateDeeperSleepMinutes(airQualityData, hasHVAC, hasEcologica).toLocaleString()} minutes of deeper sleep
+        </div>
+      )}
       <h1>{firstName ? `${firstName}'s ` : ''}{city} Dashboard</h1>
       
-      <div style={{ 
-        width: '100%',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem'
-      }}>
-        {/* PM2.5 Chart */}
-        <div className="chart-container">
-          <h2>PM2.5 Levels</h2>
-          {chartData && (
-            <>
+      <div className="dashboard-container">
+        {/* PM2.5 Section */}
+        <div className="dashboard-section">
+          <div className="content-wrapper">
+            <div className="chart-side">
+              <h2>PM2.5 Levels</h2>
+              {chartData && chartData.pm25 && (
+                <Line
+                  data={chartData.pm25}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+            
+            <div className="data-side">
+              <div className="key-data-title">
+                KEY DATA POINTS
+              </div>
               <div className="key-data-points">
-                <div className="key-data-title">KEY DATA POINTS</div>
                 <div className="key-data-point">
                   <span className="key-data-number">
                     {calculateDaysOverThreshold(airQualityData, 'PM 2.5', 10)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />10µg/m³
+                    days over<br />
+                    {10}ug/m³
                   </span>
                 </div>
                 <div className="key-data-point">
@@ -389,7 +387,8 @@ const Dashboard = ({ user }) => {
                     {calculateDaysOverThreshold(airQualityData, 'PM 2.5', 20)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />20µg/m³
+                    days over<br />
+                    {20}ug/m³
                   </span>
                 </div>
                 <div className="key-data-point">
@@ -397,33 +396,40 @@ const Dashboard = ({ user }) => {
                     {calculateDaysOverPeak(airQualityData, 'PM 2.5', 50)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />50µg/m³
+                    days over<br />
+                    {50}ug/m³
                   </span>
                 </div>
               </div>
-              <div className="chart-wrapper">
-                <Line
-                  data={chartData.pm25}
-                  options={chartOptions}
-                />
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
 
-        {/* PM10 Chart */}
-        <div className="chart-container">
-          <h2>PM10 Levels</h2>
-          {chartData && (
-            <>
+        {/* PM10 Section */}
+        <div className="dashboard-section">
+          <div className="content-wrapper">
+            <div className="chart-side">
+              <h2>PM10 Levels</h2>
+              {chartData && chartData.pm10 && (
+                <Line
+                  data={chartData.pm10}
+                  options={chartOptions}
+                />
+              )}
+            </div>
+            
+            <div className="data-side">
+              <div className="key-data-title">
+                KEY DATA POINTS
+              </div>
               <div className="key-data-points">
-                <div className="key-data-title">KEY DATA POINTS</div>
                 <div className="key-data-point">
                   <span className="key-data-number">
                     {calculateDaysOverThreshold(airQualityData, 'PM 10', 20)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />20µg/m³
+                    days over<br />
+                    {20}ug/m³
                   </span>
                 </div>
                 <div className="key-data-point">
@@ -431,7 +437,8 @@ const Dashboard = ({ user }) => {
                     {calculateDaysOverThreshold(airQualityData, 'PM 10', 40)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />40µg/m³
+                    days over<br />
+                    {40}ug/m³
                   </span>
                 </div>
                 <div className="key-data-point">
@@ -439,18 +446,13 @@ const Dashboard = ({ user }) => {
                     {calculateDaysOverPeak(airQualityData, 'PM 10', 50)}
                   </span>
                   <span className="key-data-label">
-                    days over<br />50µg/m³
+                    days over<br />
+                    {50}ug/m³
                   </span>
                 </div>
               </div>
-              <div className="chart-wrapper">
-                <Line
-                  data={chartData.pm10}
-                  options={chartOptions}
-                />
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

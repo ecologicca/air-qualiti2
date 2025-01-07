@@ -290,7 +290,79 @@ select, input {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-section {
   background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.content-wrapper {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.chart-side {
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
+}
+
+.data-side {
+  width: 300px; /* Fixed width for key data points */
+  flex-shrink: 0; /* Prevents the data side from shrinking */
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    gap: 1.5rem;
+  }
+  
+  .data-side {
+    width: 250px; /* Slightly smaller on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+  
+  .data-side {
+    width: 100%; /* Full width on mobile */
+  }
+  
+  .chart-side {
+    width: 100%;
+  }
+}
+
+/* Keep your existing key-data-points styles */
+.key-data-points {
+  background-color: #f5faf5;
+  border-radius: 0 0 8px 8px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.key-data-title {
+  background-color: #90c789;
+  color: #1a472a;
+  padding: 12px 20px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
 }
 
 .chart-container {

@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 const UserPreferences = () => {
-  const availableCities = [
+  const [availableCities, setAvailableCities] = useState([
     'Toronto',
     'San Francisco',
     'New York',
@@ -11,7 +11,7 @@ const UserPreferences = () => {
     'Boston',
     'Miami',
     'Houston'
-  ].sort();
+  ].sort());
 
   const [preferences, setPreferences] = useState({ 
     has_HVAC: false, 
@@ -126,59 +126,65 @@ const UserPreferences = () => {
   return (
     <div className="container form-container">
       <h2>User Preferences</h2>
-      <div>
-        <label>
-          First Name:
-          <input
-            type="text"
-            value={preferences.first_name}
-            onChange={(e) => setPreferences({ ...preferences, first_name: e.target.value })}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          Last Name:
-          <input
-            type="text"
-            value={preferences.last_name}
-            onChange={(e) => setPreferences({ ...preferences, last_name: e.target.value })}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          City:
-          <select
-            value={preferences.city}
-            onChange={(e) => setPreferences({ ...preferences, city: e.target.value })}
-            className="form-select"
-          >
-            {availableCities.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <label>
-        <input
-          type="checkbox"
-          checked={preferences.has_HVAC}
-          onChange={(e) => setPreferences({ ...preferences, has_HVAC: e.target.checked })}
-        />
-        Use HVAC
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={preferences.has_ecologgica}
-          onChange={(e) => setPreferences({ ...preferences, has_ecologgica: e.target.checked })}
-        />
-        Use Ecologica Product
-      </label>
-      <button onClick={handleSave}>Save Preferences</button>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          <div>
+            <label>
+              First Name:
+              <input
+                type="text"
+                value={preferences.first_name}
+                onChange={(e) => setPreferences({ ...preferences, first_name: e.target.value })}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Last Name:
+              <input
+                type="text"
+                value={preferences.last_name}
+                onChange={(e) => setPreferences({ ...preferences, last_name: e.target.value })}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              City:
+              <select
+                value={preferences.city}
+                onChange={(e) => setPreferences({ ...preferences, city: e.target.value })}
+                className="form-select"
+              >
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            <input
+              type="checkbox"
+              checked={preferences.has_HVAC}
+              onChange={(e) => setPreferences({ ...preferences, has_HVAC: e.target.checked })}
+            />
+            Use HVAC
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={preferences.has_ecologgica}
+              onChange={(e) => setPreferences({ ...preferences, has_ecologgica: e.target.checked })}
+            />
+            Use Ecologica Product
+          </label>
+          <button onClick={handleSave}>Save Preferences</button>
+        </>
+      )}
     </div>
   );
 };
