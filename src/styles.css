@@ -54,25 +54,134 @@ h3 {
 
 /* Chart styling */
 canvas {
-  width: 100% !important;
-  max-width: 500px;
-  height: 300px !important;
-  border-radius: 15px;
+  border-radius: 8px;
 }
 
 .chart-container {
-  background-color: #f0f4f8;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
   padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.chart {
+  width: 100%;
+  height: 600px;
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Add this new style for the chart wrapper */
+.chart-wrapper {
+  width: 100%;
+  height: 400px;
+  position: relative;
+  margin-top: 20px;
 }
 
 /* Navbar and dropdown styling */
 .navbar {
   display: flex;
-  justify-content: flex-end;
-  padding: 15px;
-  background-color: #ffffff;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid #eaeaea;
+}
+
+.nav-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: #333;
+}
+
+.nav-menu-container {
+  position: relative;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hamburger menu styles */
+.hamburger-menu {
+  width: 30px;
+  height: 20px;
+  display: none; /* Hidden by default on desktop */
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.hamburger-menu span {
+  width: 100%;
+  height: 2px;
+  background-color: #333;
+  transition: all 0.3s ease;
+}
+
+/* Mobile menu styles */
+@media (max-width: 768px) {
+  .hamburger-menu {
+    display: flex; /* Show on mobile */
+  }
+
+  .nav-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    padding: 1rem;
+    min-width: 200px;
+  }
+
+  .nav-menu.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hamburger menu animation */
+  .hamburger-menu.open span:first-child {
+    transform: rotate(45deg) translate(6px, 6px);
+  }
+
+  .hamburger-menu.open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger-menu.open span:last-child {
+    transform: rotate(-45deg) translate(6px, -6px);
+  }
+}
+
+/* Sign out button styles */
+.sign-out-btn {
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+}
+
+.sign-out-btn:hover {
+  color: #666;
 }
 
 .dropdown, .dropdown-menu {
@@ -208,11 +317,97 @@ select, input {
     height: calc(50vh - 1rem);
     min-height: 350px;
   }
+  
+  .chart text {
+    font-size: 10px;
+  }
 }
 
 @media (max-width: 480px) {
   .chart {
     height: calc(60vh - 1rem);
     min-height: 300px;
+    padding: 10px;
   }
+  
+  .chart text {
+    font-size: 8px;
+  }
+}
+
+/* Add these new styles for text handling */
+.chart text {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add hover effect to legend items */
+.chart-legend-item {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.chart-legend-item:hover {
+  opacity: 0.7;
+}
+
+/* Style for active legend items */
+.chart-legend-item.active {
+  font-weight: bold;
+}
+
+.key-data-points {
+  background-color: #f8f9f8;
+  border-radius: 8px;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.key-data-point {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.key-data-point:last-child {
+  border-bottom: none;
+}
+
+.key-data-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #2d4739;
+  min-width: 120px;
+  margin-right: 15px;
+}
+
+.key-data-label {
+  color: #2d4739;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding-top: 8px;
+}
+
+.key-data-title {
+  background-color: #a7d5a0;
+  color: #2d4739;
+  padding: 8px 16px;
+  border-radius: 4px 4px 0 0;
+  font-weight: bold;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .key-data-points {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+h2 {
+  color: #2d4739;
+  margin-bottom: 1rem;
 }
