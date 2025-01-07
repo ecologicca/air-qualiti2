@@ -24,10 +24,14 @@ const Navbar = () => {
         <img src={logo} alt="Logo" style={{ width: '180px', height: '40px' }} />
       </h1>
 
-      {/* Dropdown Menu */}
+      {/* Hamburger Menu */}
       <div style={styles.dropdown}>
         <div onClick={toggleDropdown} style={styles.dropdownTrigger}>
-          &#9660; {/* Downward arrow icon */}
+          <div style={styles.hamburger}>
+            <div style={styles.hamburgerLine}></div>
+            <div style={styles.hamburgerLine}></div>
+            <div style={styles.hamburgerLine}></div>
+          </div>
         </div>
 
         {/* Dropdown Content */}
@@ -60,7 +64,7 @@ const styles = {
   },
   dropdownTrigger: {
     cursor: 'pointer',
-    fontSize: '18px',
+    padding: '5px',
   },
   dropdownContent: {
     position: 'absolute',
@@ -76,6 +80,19 @@ const styles = {
     padding: '10px 20px',
     cursor: 'pointer',
     color: '#333',
+  },
+  hamburger: {
+    width: '20px',
+    height: '15px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  hamburgerLine: {
+    width: '100%',
+    height: '2px',
+    backgroundColor: '#123522',
+    transition: 'all 0.3s ease',
   },
 };
 
