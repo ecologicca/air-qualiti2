@@ -4,38 +4,51 @@ import MainRouter from './MainRouter';
 import { supabase } from './supabaseClient';
 
 const App = () => {
-  const [user, setUser] = useState(null); // State to hold user information
-  const [loading, setLoading] = useState(true); // State to track loading
+  const [authState, setAuthState] = useState({
+    user: null,
+    session: null,
+    loading: true
+  });
 
   useEffect(() => {
-    // Set up the auth state listener to track user authentication status
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && session.user) {
-        setUser(session.user); // Set user when authenticated
-      } else {
-        setUser(null); // Clear user if logged out
-      }
-      setLoading(false); // Stop loading once the auth state is known
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthState({
+        user: session?.user || null,
+        session: session,
+        loading: false
+      });
     });
 
-    // Initial user fetch to see if a session already exists
-    const checkUserSession = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false); // Stop loading after checking session
-    };
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthState({
+        user: session?.user || null,
+        session: session,
+        loading: false
+      });
+    });
 
-    checkUserSession();
-
-    // Clean up listener on component unmount
+    // Cleanup
     return () => {
-      authListener?.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
-  if (loading) return <div>Loading...</div>; // Show loading indicator if still checking auth
+  if (authState.loading) {
+    return (
+      <div className="loading-container">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
-  return <MainRouter user={user} />; // Pass the user to MainRouter or other components
+  return (
+    <MainRouter 
+      user={authState.user} 
+      session={authState.session} 
+    />
+  );
 };
 
 export default App;

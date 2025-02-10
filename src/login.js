@@ -7,6 +7,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -35,28 +36,61 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setResetEmailSent(true);
+      setError(null);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="container form-container">
         <h2>Login</h2>
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit">Login</button>
-          {error && <p className="error">{error}</p>}
-        </form>
+        {resetEmailSent ? (
+          <div className="success-message">
+            Password reset instructions have been sent to your email.
+            Please check your inbox and follow the link to reset your password.
+          </div>
+        ) : (
+          <form onSubmit={handleLogin}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="submit">Login</button>
+            <button 
+              type="button" 
+              className="forgot-password-button" 
+              onClick={handleForgotPassword}
+            >
+              Forgot Password?
+            </button>
+            {error && <p className="error">{error}</p>}
+          </form>
+        )}
         <button className="signup-button" onClick={() => navigate('/signup')}>
           Sign Up
         </button>

@@ -1,18 +1,18 @@
 // MainRouter.js
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import Navbar from './Navbar';
 import Login from './login';
-import Signup from './signUp';
+import SignUp from './signUp';
 import Dashboard from './Dashboard';
 import ThankYou from './ThankYou';
 import WelcomePage from './WelcomePage';
 import Questionnaire from './Questionnaire';
 import UserPreferences from './UserPreferences';
+import ResetPassword from './ResetPassword';
 
-const MainRouter = () => {
-  const [user, setUser] = useState(null);
+const MainRouter = ({ user, session }) => {
   const [hasPreferences, setHasPreferences] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,97 +24,141 @@ const MainRouter = () => {
       
       if (sessionError) {
         console.error("Error fetching session:", sessionError.message);
-        setUser(null);
         setHasPreferences(false);
-        setLoading(false); // Ensure loading is set to false on error
-        setError("User not authenticated or user ID is missing.");
-        return;
+        setLoading(false);
+        return false; // Return false to indicate no valid session
       }
   
       if (sessionData && sessionData.session) {
-        // If a session exists, set the user and check preferences
-        const currentUser = sessionData.session.user;
-        console.log("Session found for user ID:", currentUser.id);
-        setUser(currentUser);
+        console.log("Session found for user ID:", sessionData.session.user.id);
   
         // Check if the user has preferences
         const { data: preferences, error: preferencesError } = await supabase
           .from('user_preferences')
           .select('*')
-          .eq('user_id', currentUser.id)
+          .eq('user_id', sessionData.session.user.id)
           .single();
   
         if (preferencesError) {
           console.error("Error fetching user preferences:", preferencesError.message);
           setHasPreferences(false);
         } else {
-          setHasPreferences(!!preferences); // Set based on whether preferences exist
+          setHasPreferences(!!preferences);
         }
+        return true; // Return true to indicate valid session
       } else {
-        // No active session found
         console.log("No active session found or user ID is missing.");
-        setUser(null);
         setHasPreferences(false);
-        setError("User not authenticated or user ID is missing.");
+        setLoading(false);
+        return false; // Return false to indicate no valid session
       }
     } catch (error) {
       console.error("Unexpected error checking session:", error);
-      setUser(null);
       setHasPreferences(false);
-      setError("Unexpected error occurred while checking the session.");
+      setLoading(false);
+      return false; // Return false on error
     } finally {
       console.log("Setting loading to false");
-      setLoading(false);  // Ensure loading is set to false no matter what
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    checkUserSession();
+    const initializeSession = async () => {
+      const hasValidSession = await checkUserSession();
+      if (!hasValidSession && !loading) {
+        console.log("No valid session, redirecting to login");
+        // Instead of redirecting here, we'll let the router handle it
+      }
+    };
+
+    initializeSession();
 
     // Listen for authentication state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setLoading(true);  // Set loading to true while handling the state change
       if (session) {
         console.log("Auth state change detected: user logged in");
-        checkUserSession();  // Re-check preferences on auth change
+        checkUserSession();
       } else {
         console.log("Auth state change detected: user logged out");
-        setUser(null);
         setHasPreferences(false);
-        setLoading(false); // Stop loading if user logged out
+        setLoading(false);
       }
     });
 
-    // Cleanup the listener on unmount
     return () => authListener?.subscription.unsubscribe();
   }, []);
 
+  // Function to check if route should be protected
+  const ProtectedRoute = ({ children }) => {
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+    return children;
+  };
+
+  // Function to check if user should be redirected from auth pages
+  const AuthRoute = ({ children }) => {
+    if (user) {
+      return <Navigate to="/dashboard" replace />;
+    }
+    return children;
+  };
+
   if (loading) return <div>Loading...</div>;
-  if (error) return <p>{error}</p>;
 
   return (
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
-        
-        {/* Redirect to Questionnaire if preferences not set */}
+        {/* Public routes */}
         <Route 
-          path="/dashboard" 
-          element={user && hasPreferences ? <Dashboard user={user} /> : <Navigate to="/questionnaire" />} />
-      
-        <Route path="/thankyou" element={<ThankYou />} />
-        
-        {/* Questionnaire should load only if preferences aren't set */}
-        <Route
-         path="/questionnaire" 
-         element={user && !hasPreferences ? <Questionnaire user={user} /> : <Navigate to="/dashboard" />} />
+          path="/login" 
+          element={
+            <AuthRoute>
+              <Login />
+            </AuthRoute>
+          } 
+        />
+        <Route 
+          path="/signup" 
+          element={
+            <AuthRoute>
+              <SignUp />
+            </AuthRoute>
+          } 
+        />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* User Preferences page accessible after setting initial preferences */}
-        <Route path="/userpreferences" element={user ? <UserPreferences /> : <Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/questionnaire"
+          element={
+            <ProtectedRoute>
+              <Questionnaire />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default route */}
+        <Route 
+          path="/" 
+          element={
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
       </Routes>
     </Router>
   );

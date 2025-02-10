@@ -164,7 +164,7 @@ const Dashboard = () => {
     }
   }, [airQualityData, hasHVAC, hasEcologica, activeDatasets]);
 
-  const getLast30Days = (data) => {
+  const getLast100Days = (data) => {
     if (!Array.isArray(data) || data.length === 0) return [];
 
     const validData = data
@@ -189,7 +189,7 @@ const Dashboard = () => {
 
     const mostRecentDate = validData[0].date;
     const cutoffDate = new Date(mostRecentDate);
-    cutoffDate.setDate(cutoffDate.getDate() - 30);
+    cutoffDate.setDate(cutoffDate.getDate() - 100);
 
     return validData
       .filter(item => item.date >= cutoffDate)
@@ -252,8 +252,8 @@ const Dashboard = () => {
         pm25Example: data[0]?.['PM 2.5'],
         pm10Example: data[0]?.['PM 10']
       });
-      const last30DaysData = getLast30Days(data.filter(item => item.City === city));
-      setAirQualityData(last30DaysData);
+      const last100DaysData = getLast100Days(data.filter(item => item.City === city));
+      setAirQualityData(last100DaysData);
     } catch (error) {
       console.error('Error fetching air quality:', error);
     } finally {
