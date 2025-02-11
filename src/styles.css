@@ -484,19 +484,40 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.forgot-password-button {
+.text-button {
   background: none;
   border: none;
-  color: #4a90e2;
-  text-decoration: underline;
+  color: #666;
+  text-decoration: none;
   cursor: pointer;
   margin-top: 10px;
   padding: 0;
   font-size: 0.9em;
 }
 
-.forgot-password-button:hover {
-  color: #357abd;
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.back-to-login {
+  margin-top: 20px;
+  background-color: transparent;
+  border: 1px solid #4a90e2;
+  color: #4a90e2;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-to-login:hover {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.back-to-login:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .success-message {
@@ -630,3 +651,4 @@ h2 {
 .save-button:hover {
   background-color: #7ab073;
 }
+

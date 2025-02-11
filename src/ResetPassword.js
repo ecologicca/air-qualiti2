@@ -5,73 +5,42 @@ import './styles.css';
 
 const ResetPassword = () => {
   const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
 
   const handleSendResetEmail = async (e) => {
     e.preventDefault();
-    
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
+    setError(null);
+    setIsLoading(true);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      // Send reset instructions directly - Supabase will handle email existence check
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setEmailSent(true);
-      setError(null);
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    
-    if (newPassword !== confirmPassword) {
-      setError("Passwords don't match");
-      return;
-    }
-
-    const { error: resetError } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      if (resetError) {
+        setError(resetError.message);
+      } else {
+        // If no error, assume email was sent successfully
+        setResetEmailSent(true);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      console.error('Reset password error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (success) {
+  if (resetEmailSent) {
     return (
       <div className="login-container">
         <div className="container form-container">
           <div className="success-message">
-            Password successfully reset! Redirecting to login...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (emailSent) {
-    return (
-      <div className="login-container">
-        <div className="container form-container">
-          <div className="success-message">
-            Password reset instructions have been sent to your email.
+            If an account exists with this email, password reset instructions have been sent.
             Please check your inbox and follow the link to reset your password.
           </div>
           <button 
@@ -95,14 +64,21 @@ const ResetPassword = () => {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
             required
           />
-          <button type="submit">Send Reset Instructions</button>
+          <button 
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Sending...' : 'Send Reset Instructions'}
+          </button>
           {error && <p className="error">{error}</p>}
         </form>
         <button 
           className="back-to-login" 
           onClick={() => navigate('/login')}
+          disabled={isLoading}
         >
           Back to Login
         </button>

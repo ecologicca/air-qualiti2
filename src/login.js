@@ -83,8 +83,8 @@ const Login = () => {
             <button type="submit">Login</button>
             <button 
               type="button" 
-              className="forgot-password-button" 
-              onClick={handleForgotPassword}
+              className="text-button"
+              onClick={() => navigate('/reset-password')}
             >
               Forgot Password?
             </button>
