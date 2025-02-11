@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import './styles.css';
 
 const UserPreferences = () => {
   const [availableCities, setAvailableCities] = useState([
@@ -124,67 +125,73 @@ const UserPreferences = () => {
   };
 
   return (
-    <div className="container form-container">
-      <h2>User Preferences</h2>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : (
-        <>
-          <div>
-            <label>
-              First Name:
-              <input
-                type="text"
-                value={preferences.first_name}
-                onChange={(e) => setPreferences({ ...preferences, first_name: e.target.value })}
-              />
-            </label>
-          </div>
-          <div>
-            <label>
-              Last Name:
-              <input
-                type="text"
-                value={preferences.last_name}
-                onChange={(e) => setPreferences({ ...preferences, last_name: e.target.value })}
-              />
-            </label>
-          </div>
-          <div>
-            <label>
-              City:
-              <select
-                value={preferences.city}
-                onChange={(e) => setPreferences({ ...preferences, city: e.target.value })}
-                className="form-select"
-              >
-                {availableCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label>
+    <div className="preferences-container">
+      <div className="preferences-content">
+        <h1 className="preferences-title">User Preferences</h1>
+        
+        <form className="preferences-form">
+          <div className="form-group">
+            <label>First Name:</label>
             <input
-              type="checkbox"
-              checked={preferences.has_HVAC}
-              onChange={(e) => setPreferences({ ...preferences, has_HVAC: e.target.checked })}
+              type="text"
+              value={preferences.first_name}
+              onChange={(e) => setPreferences({ ...preferences, first_name: e.target.value })}
+              className="form-input"
             />
-            Use HVAC
-          </label>
-          <label>
+          </div>
+
+          <div className="form-group">
+            <label>Last Name:</label>
             <input
-              type="checkbox"
-              checked={preferences.has_ecologgica}
-              onChange={(e) => setPreferences({ ...preferences, has_ecologgica: e.target.checked })}
+              type="text"
+              value={preferences.last_name}
+              onChange={(e) => setPreferences({ ...preferences, last_name: e.target.value })}
+              className="form-input"
             />
-            Use Ecologica Product
-          </label>
-          <button onClick={handleSave}>Save Preferences</button>
-        </>
-      )}
+          </div>
+
+          <div className="form-group">
+            <label>City:</label>
+            <select
+              value={preferences.city}
+              onChange={(e) => setPreferences({ ...preferences, city: e.target.value })}
+              className="form-select"
+            >
+              {availableCities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={preferences.has_HVAC}
+                onChange={(e) => setPreferences({ ...preferences, has_HVAC: e.target.checked })}
+              />
+              Use HVAC
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={preferences.has_ecologgica}
+                onChange={(e) => setPreferences({ ...preferences, has_ecologgica: e.target.checked })}
+              />
+              Use Ecologica Product
+            </label>
+          </div>
+
+          <button onClick={handleSave} className="save-button">
+            Save Preferences
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

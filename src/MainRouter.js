@@ -147,6 +147,14 @@ const MainRouter = ({ user, session }) => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/userpreferences"
+          element={
+            <ProtectedRoute>
+              <UserPreferences />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Default route */}
         <Route 

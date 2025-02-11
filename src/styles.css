@@ -546,3 +546,87 @@ h2 {
   background-color: #4a90e2;
   color: white;
 }
+
+/* User Preferences Styles */
+.preferences-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.preferences-content {
+  background-color: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.preferences-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+  font-size: 2rem;
+}
+
+.preferences-form {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Ensures left alignment */
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-top: 5px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.save-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #90c789;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+  background-color: #7ab073;
+}
