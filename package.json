@@ -11,6 +11,10 @@
     "dev": "nodemon server/backend.js"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
+    "@capacitor/ios": "^7.0.1",
     "@supabase/supabase-js": "^2.45.4",
     "chart.js": "^4.4.1",
     "chartjs-adapter-date-fns": "^3.0.0",
