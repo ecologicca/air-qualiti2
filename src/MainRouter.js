@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import Navbar from './Navbar';
-import Login from './login';
+import Login from './Login';
 import SignUp from './signUp';
 import Dashboard from './Dashboard';
 import ThankYou from './ThankYou';
@@ -92,7 +92,7 @@ const MainRouter = ({ user, session }) => {
   // Function to check if route should be protected
   const ProtectedRoute = ({ children }) => {
     if (!user) {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/Login" replace />;
     }
     return children;
   };
@@ -113,7 +113,7 @@ const MainRouter = ({ user, session }) => {
       <Routes>
         {/* Public routes */}
         <Route 
-          path="/login" 
+          path="/Login" 
           element={
             <AuthRoute>
               <Login />
