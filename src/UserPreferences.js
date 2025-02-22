@@ -14,12 +14,14 @@ const UserPreferences = () => {
     'Houston'
   ].sort());
 
-  const [preferences, setPreferences] = useState({ 
-    has_HVAC: false, 
+  const [preferences, setPreferences] = useState({
+    has_HVAC: false,
     has_ecologgica: false,
     first_name: '',
     last_name: '',
-    city: 'Toronto'
+    city: 'Toronto',
+    anxiety_base_level: 5, // Default middle value
+    track_anxiety: false, // New checkbox state
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -28,24 +30,20 @@ const UserPreferences = () => {
     const fetchPreferences = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: preferencesData, error } = await supabase
-            .from('user_preferences')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+        if (!user) {
+          navigate('/login');
+          return;
+        }
 
-          if (error) throw error;
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
 
-          if (preferencesData) {
-            setPreferences({
-              has_HVAC: preferencesData.has_HVAC || false,
-              has_ecologgica: preferencesData.has_ecologgica || false,
-              first_name: preferencesData.first_name || '',
-              last_name: preferencesData.last_name || '',
-              city: preferencesData.city || 'Toronto'
-            });
-          }
+        if (error) throw error;
+        if (data) {
+          setPreferences(data);
         }
       } catch (error) {
         console.error('Error fetching preferences:', error);
@@ -53,7 +51,7 @@ const UserPreferences = () => {
     };
 
     fetchPreferences();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -81,46 +79,40 @@ const UserPreferences = () => {
     fetchCities();
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    e.preventDefault();
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('No user found');
         alert('Please log in to save preferences');
+        navigate('/login');
         return;
       }
 
-      console.log('Attempting to save preferences:', {
-        user_id: user.id,
-        ...preferences
-      });
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_preferences')
         .upsert({ 
-          user_id: user.id, 
-          has_HVAC: preferences.has_HVAC, 
+          user_id: user.id,
+          has_HVAC: preferences.has_HVAC,
           has_ecologgica: preferences.has_ecologgica,
-          first_name: preferences.first_name.trim(),
-          last_name: preferences.last_name.trim(),
-          city: preferences.city || 'Toronto'
+          first_name: preferences.first_name,
+          last_name: preferences.last_name,
+          city: preferences.city,
+          anxiety_base_level: Number(preferences.anxiety_base_level),
+          track_anxiety: preferences.track_anxiety
         }, {
           onConflict: 'user_id',
           ignoreDuplicates: false
-        })
-        .select();
+        });
 
-      if (error) {
-        console.error('Detailed save error:', error);
-        throw error;
-      }
-
-      console.log('Save successful:', data);
+      if (error) throw error;
+      
       alert('Preferences saved successfully!');
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error saving preferences:', error.message);
-      alert(`Failed to save preferences: ${error.message}`);
+      console.error('Error saving preferences:', error);
+      alert('Error saving preferences: ' + error.message);
     }
   };
 
@@ -129,14 +121,16 @@ const UserPreferences = () => {
       <div className="preferences-content">
         <h1 className="preferences-title">User Preferences</h1>
         
-        <form className="preferences-form">
+        <form onSubmit={handleSave} className="preferences-form">
           <div className="form-group">
             <label>First Name:</label>
             <input
               type="text"
               value={preferences.first_name}
-              onChange={(e) => setPreferences({ ...preferences, first_name: e.target.value })}
-              className="form-input"
+              onChange={(e) => setPreferences({ 
+                ...preferences, 
+                first_name: e.target.value 
+              })}
             />
           </div>
 
@@ -145,8 +139,10 @@ const UserPreferences = () => {
             <input
               type="text"
               value={preferences.last_name}
-              onChange={(e) => setPreferences({ ...preferences, last_name: e.target.value })}
-              className="form-input"
+              onChange={(e) => setPreferences({ 
+                ...preferences, 
+                last_name: e.target.value 
+              })}
             />
           </div>
 
@@ -154,8 +150,10 @@ const UserPreferences = () => {
             <label>City:</label>
             <select
               value={preferences.city}
-              onChange={(e) => setPreferences({ ...preferences, city: e.target.value })}
-              className="form-select"
+              onChange={(e) => setPreferences({ 
+                ...preferences, 
+                city: e.target.value 
+              })}
             >
               {availableCities.map((city) => (
                 <option key={city} value={city}>
@@ -166,13 +164,46 @@ const UserPreferences = () => {
           </div>
 
           <div className="form-group">
+            <label>Base Anxiety Level (1-10):</label>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={preferences.anxiety_base_level}
+              onChange={(e) => setPreferences({ 
+                ...preferences, 
+                anxiety_base_level: parseInt(e.target.value) 
+              })}
+              className="form-slider"
+            />
+            <span className="slider-value">{preferences.anxiety_base_level}</span>
+          </div>
+
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={preferences.track_anxiety}
+                onChange={(e) => setPreferences({ 
+                  ...preferences, 
+                  track_anxiety: e.target.checked 
+                })}
+              />
+              Track Anxiety Levels
+            </label>
+          </div>
+
+          <div className="form-group">
             <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={preferences.has_HVAC}
-                onChange={(e) => setPreferences({ ...preferences, has_HVAC: e.target.checked })}
+                onChange={(e) => setPreferences({ 
+                  ...preferences, 
+                  has_HVAC: e.target.checked 
+                })}
               />
-              Use HVAC
+              Has HVAC
             </label>
           </div>
 
@@ -181,13 +212,16 @@ const UserPreferences = () => {
               <input
                 type="checkbox"
                 checked={preferences.has_ecologgica}
-                onChange={(e) => setPreferences({ ...preferences, has_ecologgica: e.target.checked })}
+                onChange={(e) => setPreferences({ 
+                  ...preferences, 
+                  has_ecologgica: e.target.checked 
+                })}
               />
-              Use Ecologica Product
+              Has Ecologgica Product
             </label>
           </div>
 
-          <button onClick={handleSave} className="save-button">
+          <button type="submit" className="save-button">
             Save Preferences
           </button>
         </form>
