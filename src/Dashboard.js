@@ -77,6 +77,26 @@ const calculateAnxietyRisk = (baseLevel, pm10) => {
   return baseLevel;
 };
 
+// Add this before the Dashboard component definition
+const DatasetToggle = ({ name, isActive, onToggle, color }) => (
+  <div style={{ display: 'flex', alignItems: 'center', margin: '5px 0' }}>
+    <button
+      onClick={() => onToggle(name)}
+      style={{
+        width: '20px',
+        height: '20px',
+        borderRadius: '50%',
+        border: `2px solid ${color}`,
+        backgroundColor: isActive ? color : 'white',
+        cursor: 'pointer',
+        marginRight: '8px',
+        padding: 0
+      }}
+    />
+    <span style={{ fontSize: '0.9rem' }}>{name}</span>
+  </div>
+);
+
 const Dashboard = () => {
   const [airQualityData, setAirQualityData] = useState([]);
   const [chartData, setChartData] = useState(null);
@@ -87,16 +107,22 @@ const Dashboard = () => {
   const [firstName, setFirstName] = useState('');
   const [activeDatasets, setActiveDatasets] = useState({
     'Original PM2.5': true,
-    'PM2.5 with HVAC': false,
-    'PM2.5 with Ecologica': false,
-    'PM2.5 with Both': false,
+    'PM2.5 with Your Preferences': true,
     'Original PM10': true,
-    'PM10 with HVAC': false,
-    'PM10 with Ecologica': false,
-    'PM10 with Both': false
+    'PM10 with Your Preferences': true,
+    'Baseline Anxiety Risk': true,
+    'Anxiety Risk with Your Preferences': true
   });
   const [anxietyLevel, setAnxietyLevel] = useState(5);
   const [anxietyChartData, setAnxietyChartData] = useState(null);
+
+  // Also add the toggle function in your Dashboard component
+  const toggleDataset = (name) => {
+    setActiveDatasets(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
 
   const getLast60Days = (data) => {
     if (!Array.isArray(data) || data.length === 0) return [];
@@ -128,36 +154,122 @@ const Dashboard = () => {
       .sort((a, b) => a.date - b.date);
   };
 
-  const processChartData = (data, metric) => {
-    const last60Days = getLast60Days(data);
-    return {
-      labels: last60Days.map(d => d.date),
-      datasets: [{
-        label: metric,
-        data: last60Days.map(d => d[metric]),
-        borderColor: metric === 'PM 2.5' ? '#90c789' : '#7ab073',
-        backgroundColor: metric === 'PM 2.5' ? 'rgba(144, 199, 137, 0.1)' : 'rgba(122, 176, 115, 0.1)',
+  const processChartData = (data, pollutantType) => {
+    // Always show the original data
+    const datasets = [
+      {
+        label: `Original ${pollutantType}`,
+        data: data.map(d => ({
+          x: d.date,
+          y: pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5'])
+        })),
+        borderColor: 'rgb(0, 100, 0)', // Dark green
+        backgroundColor: 'rgba(0, 100, 0, 0.1)',
         borderWidth: 2,
-        tension: 0.1
-      }]
-    };
+        tension: 0.1,
+        hidden: !activeDatasets[`Original ${pollutantType}`]
+      }
+    ];
+
+    // Add your preference-based reductions if they exist
+    if (hasHVAC || hasEcologica) {
+      // If you have both HVAC and Ecologica
+      if (hasHVAC && hasEcologica) {
+        datasets.push({
+          label: `${pollutantType} with Your Preferences`,
+          data: data.map(d => ({
+            x: d.date,
+            y: calculateCombinedReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
+          })),
+          borderColor: 'rgb(144, 238, 144)', // Light green
+          backgroundColor: 'rgba(144, 238, 144, 0.1)',
+          borderWidth: 2,
+          tension: 0.1,
+          hidden: !activeDatasets[`${pollutantType} with Your Preferences`]
+        });
+      }
+      // If you only have HVAC
+      else if (hasHVAC) {
+        datasets.push({
+          label: `${pollutantType} with Your Preferences`,
+          data: data.map(d => ({
+            x: d.date,
+            y: calculateHVACReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
+          })),
+          borderColor: 'rgb(34, 139, 34)', // Forest green
+          backgroundColor: 'rgba(34, 139, 34, 0.1)',
+          borderWidth: 2,
+          tension: 0.1,
+          hidden: !activeDatasets[`${pollutantType} with HVAC`]
+        });
+      }
+      // If you only have Ecologica
+      else if (hasEcologica) {
+        datasets.push({
+          label: `${pollutantType} with Your Preferences`,
+          data: data.map(d => ({
+            x: d.date,
+            y: calculateEcologicaReduction(pollutantType === 'PM10' ? parseFloat(d['PM 10']) : parseFloat(d['PM 2.5']))
+          })),
+          borderColor: 'rgb(60, 179, 113)', // Medium sea green
+          backgroundColor: 'rgba(60, 179, 113, 0.1)',
+          borderWidth: 2,
+          tension: 0.1,
+          hidden: !activeDatasets[`${pollutantType} with Ecologica`]
+        });
+      }
+    }
+
+    return { datasets };
   };
 
   const processAnxietyChartData = (data) => {
-    return {
-      labels: data.map(d => d.date || d.timestamp),
-      datasets: [{
-        label: 'Predicted Anxiety Level',
-        data: data.map(d => ({
-          x: d.date || d.timestamp,
-          y: calculateAnxietyRisk(anxietyLevel, parseFloat(d['PM10']))
+    const last60DaysData = getLast60Days(data);
+    
+    // Always show the baseline data
+    const datasets = [
+      {
+        label: 'Baseline Anxiety Risk',
+        data: last60DaysData.map(d => ({
+          x: d.date,
+          y: calculateAnxietyRisk(anxietyLevel, parseFloat(d['PM 10']))
         })),
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        borderColor: 'rgb(0, 100, 0)', // Dark green to match PM10
+        backgroundColor: 'rgba(0, 100, 0, 0.1)',
         borderWidth: 2,
-        tension: 0.1
-      }]
-    };
+        tension: 0.1,
+        hidden: !activeDatasets['Baseline Anxiety Risk']
+      }
+    ];
+
+    // Add your preference-based reductions if they exist
+    if (hasHVAC || hasEcologica) {
+      let reducedPM10;
+      if (hasHVAC && hasEcologica) {
+        reducedPM10 = calculateCombinedReduction;
+      } else if (hasHVAC) {
+        reducedPM10 = calculateHVACReduction;
+      } else if (hasEcologica) {
+        reducedPM10 = calculateEcologicaReduction;
+      }
+
+      if (reducedPM10) {
+        datasets.push({
+          label: 'Anxiety Risk with Your Preferences',
+          data: last60DaysData.map(d => ({
+            x: d.date,
+            y: calculateAnxietyRisk(anxietyLevel, reducedPM10(parseFloat(d['PM 10'])))
+          })),
+          borderColor: 'rgb(144, 238, 144)', // Light green to match PM10
+          backgroundColor: 'rgba(144, 238, 144, 0.1)',
+          borderWidth: 2,
+          tension: 0.1,
+          hidden: !activeDatasets['Anxiety Risk with Your Preferences']
+        });
+      }
+    }
+
+    return { datasets };
   };
 
   const fetchUserPreferences = async () => {
@@ -187,20 +299,22 @@ const Dashboard = () => {
   const fetchAirQualityData = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/data');
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        setAirQualityData(data);
-        
-        // Process data for charts
-        const processedData = {
-          pm25: processChartData(data, 'PM 2.5'),
-          pm10: processChartData(data, 'PM 10')
-        };
-        setChartData(processedData);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const data = await response.json();
+      console.log('Raw data from API:', {
+        city: city,
+        firstRow: data[0],
+        pm25Example: data[0]?.['PM 2.5'],
+        pm10Example: data[0]?.['PM 10']
+      });
+      const last60DaysData = getLast60Days(data);
+      setAirQualityData(last60DaysData);
     } catch (error) {
-      console.error('Error fetching air quality data:', error);
+      console.error('Error fetching air quality:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -252,6 +366,22 @@ const Dashboard = () => {
       console.log('PM10 value:', airQualityData[0]['PM 10']);
     }
   }, [airQualityData]);
+
+  // Update useEffect to include anxiety chart data
+  useEffect(() => {
+    if (airQualityData.length > 0) {
+      console.log('Anxiety Chart Data:', {
+        airQualityData: airQualityData[0],
+        anxietyLevel,
+        processedData: processAnxietyChartData(airQualityData)
+      });
+      setChartData({
+        pm25: processChartData(airQualityData, 'PM2.5'),
+        pm10: processChartData(airQualityData, 'PM10'),
+        anxiety: processAnxietyChartData(airQualityData)
+      });
+    }
+  }, [airQualityData, hasHVAC, hasEcologica, activeDatasets, anxietyLevel]);
 
   return (
     <>
@@ -312,7 +442,7 @@ const Dashboard = () => {
                         },
                         plugins: {
                           legend: {
-                            position: 'bottom'
+                            display: false
                           },
                           tooltip: {
                             mode: 'index',
@@ -320,6 +450,27 @@ const Dashboard = () => {
                           }
                         }
                       }}
+                    />
+                  )}
+                </div>
+                <div style={{ 
+                  marginTop: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  justifyContent: 'center'
+                }}>
+                  <DatasetToggle 
+                    name="Original PM2.5" 
+                    isActive={activeDatasets['Original PM2.5']} 
+                    onToggle={toggleDataset}
+                    color="rgb(0, 100, 0)"
+                  />
+                  {(hasHVAC || hasEcologica) && (
+                    <DatasetToggle 
+                      name="PM2.5 with Your Preferences" 
+                      isActive={activeDatasets['PM2.5 with Your Preferences']} 
+                      onToggle={toggleDataset}
+                      color="rgb(144, 238, 144)"
                     />
                   )}
                 </div>
@@ -398,7 +549,7 @@ const Dashboard = () => {
                         },
                         plugins: {
                           legend: {
-                            position: 'bottom'
+                            display: false
                           },
                           tooltip: {
                             mode: 'index',
@@ -406,6 +557,27 @@ const Dashboard = () => {
                           }
                         }
                       }}
+                    />
+                  )}
+                </div>
+                <div style={{ 
+                  marginTop: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  justifyContent: 'center'
+                }}>
+                  <DatasetToggle 
+                    name="Original PM10" 
+                    isActive={activeDatasets['Original PM10']} 
+                    onToggle={toggleDataset}
+                    color="rgb(0, 100, 0)"
+                  />
+                  {(hasHVAC || hasEcologica) && (
+                    <DatasetToggle 
+                      name="PM10 with Your Preferences" 
+                      isActive={activeDatasets['PM10 with Your Preferences']} 
+                      onToggle={toggleDataset}
+                      color="rgb(144, 238, 144)"
                     />
                   )}
                 </div>
@@ -454,22 +626,9 @@ const Dashboard = () => {
               <div className="chart-side">
                 <h2>Anxiety Tracking</h2>
                 <div style={{ height: '400px', width: '100%' }}>
-                  {chartData && (
+                  {chartData && chartData.anxiety && (
                     <Line
-                      data={{
-                        labels: getLast60Days(airQualityData).map(d => d.date),
-                        datasets: [{
-                          label: 'Predicted Anxiety Level',
-                          data: getLast60Days(airQualityData).map(d => ({
-                            x: d.date,
-                            y: calculateAnxietyRisk(anxietyLevel, parseFloat(d['PM 10']))
-                          })),
-                          borderColor: 'rgb(255, 99, 132)',
-                          backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                          borderWidth: 2,
-                          tension: 0.1
-                        }]
-                      }}
+                      data={chartData.anxiety}
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
@@ -495,8 +654,35 @@ const Dashboard = () => {
                               text: 'Anxiety Level'
                             }
                           }
+                        },
+                        plugins: {
+                          legend: {
+                            display: false
+                          }
                         }
                       }}
+                    />
+                  )}
+                </div>
+                <div className="dataset-toggles" style={{ 
+                  marginTop: '20px',
+                  display: 'flex',
+                  gap: '20px',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center'
+                }}>
+                  <DatasetToggle 
+                    name="Baseline Anxiety Risk" 
+                    isActive={activeDatasets['Baseline Anxiety Risk']} 
+                    onToggle={toggleDataset}
+                    color="rgb(0, 100, 0)"
+                  />
+                  {(hasHVAC || hasEcologica) && (
+                    <DatasetToggle 
+                      name="Anxiety Risk with Your Preferences" 
+                      isActive={activeDatasets['Anxiety Risk with Your Preferences']} 
+                      onToggle={toggleDataset}
+                      color="rgb(144, 238, 144)"
                     />
                   )}
                 </div>
@@ -517,7 +703,7 @@ const Dashboard = () => {
                   </div>
                   <div className="key-data-point">
                     <span className="key-data-number">
-                      {getLast60Days(airQualityData).filter(day => 
+                      {airQualityData.filter(day => 
                         calculateAnxietyRisk(anxietyLevel, parseFloat(day['PM 10'])) > anxietyLevel
                       ).length}
                     </span>
@@ -527,7 +713,7 @@ const Dashboard = () => {
                   </div>
                   <div className="key-data-point">
                     <span className="key-data-number">
-                      {Math.max(...getLast60Days(airQualityData).map(day => 
+                      {Math.max(...airQualityData.map(day => 
                         calculateAnxietyRisk(anxietyLevel, parseFloat(day['PM 10']))
                       )).toFixed(1)}
                     </span>
