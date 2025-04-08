@@ -11,6 +11,7 @@ import WelcomePage from './WelcomePage';
 import Questionnaire from './Questionnaire';
 import UserPreferences from './UserPreferences';
 import ResetPassword from './ResetPassword';
+import BrainHealthPM2_5_Wildfire from '../components/BrainHealthPM2_5_Wildfire';
 
 const MainRouter = ({ user, session }) => {
   const [hasPreferences, setHasPreferences] = useState(false);
@@ -152,6 +153,14 @@ const MainRouter = ({ user, session }) => {
           element={
             <ProtectedRoute>
               <UserPreferences />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wildfire-calculator"
+          element={
+            <ProtectedRoute>
+              <BrainHealthPM2_5_Wildfire />
             </ProtectedRoute>
           }
         />
