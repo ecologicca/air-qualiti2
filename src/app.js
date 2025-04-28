@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import MainRouter from './MainRouter';
 import { supabase } from './supabaseClient';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
 import UserPreferences from './UserPreferences';
 import Dashboard from './Dashboard';
@@ -48,7 +48,7 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Login" element={<Login />} />
@@ -62,7 +62,7 @@ const App = () => {
           />
         } />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 };
 
